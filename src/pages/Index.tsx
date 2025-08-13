@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Slider } from '@/components/ui/slider';
 import Icon from '@/components/ui/icon';
 
 const Index = () => {
@@ -15,6 +17,13 @@ const Index = () => {
     { id: 3, user: 'Streamer', text: 'Начинаю стрим Valorant через 5 минут!', time: '12:32' },
   ]);
   const [newMessage, setNewMessage] = useState('');
+  const [userOrbs, setUserOrbs] = useState(250);
+  const [selectedSkin, setSelectedSkin] = useState(null);
+  const [skinColors, setSkinColors] = useState({
+    primary: '#8B5CF6',
+    secondary: '#F97316',
+    accent: '#10B981'
+  });
 
   const games = [
     { id: 1, title: 'Cyberpunk 2077', category: 'RPG', rating: 4.2, players: '12.5K', image: '/img/aa177eec-efd9-49fe-8751-c18dcec5c174.jpg' },
@@ -31,6 +40,15 @@ const Index = () => {
     { id: 3, title: 'Турнир по CS:GO', streamer: 'ESportsCast', viewers: 32105, game: 'CS:GO' },
   ];
 
+  const skins = [
+    { id: 1, name: 'Неоновый Воин', price: 15, rarity: 'epic', game: 'Valorant', type: 'weapon' },
+    { id: 2, name: 'Киберпанк Ниндзя', price: 25, rarity: 'legendary', game: 'Cyberpunk 2077', type: 'character' },
+    { id: 3, name: 'Космический Рейнджер', price: 10, rarity: 'rare', game: 'Minecraft', type: 'character' },
+    { id: 4, name: 'Огненный Дракон', price: 30, rarity: 'mythic', game: 'CS:GO', type: 'weapon' },
+    { id: 5, name: 'Ледяной Призрак', price: 20, rarity: 'epic', game: 'Dota 2', type: 'character' },
+    { id: 6, name: 'Золотой Император', price: 50, rarity: 'legendary', game: 'World of Warcraft', type: 'armor' },
+  ];
+
   const sendMessage = () => {
     if (newMessage.trim()) {
       setMessages([...messages, {
@@ -40,6 +58,28 @@ const Index = () => {
         time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
       }]);
       setNewMessage('');
+    }
+  };
+
+  const buySkin = (skin: any) => {
+    if (userOrbs >= skin.price) {
+      setUserOrbs(userOrbs - skin.price);
+      setMessages([...messages, {
+        id: messages.length + 1,
+        user: 'Система',
+        text: `🎨 Поздравляем! Вы купили скин "${skin.name}" за ${skin.price} орбов!`,
+        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+      }]);
+    }
+  };
+
+  const getRarityColor = (rarity: string) => {
+    switch (rarity) {
+      case 'rare': return 'text-blue-400 border-blue-400/30 bg-blue-400/10';
+      case 'epic': return 'text-purple-400 border-purple-400/30 bg-purple-400/10';
+      case 'legendary': return 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10';
+      case 'mythic': return 'text-red-400 border-red-400/30 bg-red-400/10';
+      default: return 'text-gray-400 border-gray-400/30 bg-gray-400/10';
     }
   };
 
@@ -62,6 +102,14 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3 bg-card/50 rounded-lg px-4 py-2 border border-border/50">
+                <Icon name="Coins" size={20} className="text-yellow-500" />
+                <span className="font-bold text-yellow-500">{userOrbs}</span>
+                <span className="text-sm text-muted-foreground">орбов</span>
+                <div className="text-xs text-muted-foreground">
+                  (≈{userOrbs * 10} ₽)
+                </div>
+              </div>
               <Input 
                 placeholder="Поиск игр..." 
                 className="w-64 bg-background/50 border-border/50"
@@ -135,6 +183,117 @@ const Index = () => {
                           <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
                             <Icon name="Play" size={16} className="mr-2" />
                             Играть
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Skins Store Section */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-bold">Магазин скинов</h3>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="bg-primary hover:bg-primary/90">
+                      <Icon name="Palette" size={16} className="mr-2" />
+                      Создать скин
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md bg-card border-border">
+                    <DialogHeader>
+                      <DialogTitle>Создание скина</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Основной цвет</label>
+                          <input
+                            type="color"
+                            value={skinColors.primary}
+                            onChange={(e) => setSkinColors({...skinColors, primary: e.target.value})}
+                            className="w-full h-12 rounded border border-border/50"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Дополнительный цвет</label>
+                          <input
+                            type="color"
+                            value={skinColors.secondary}
+                            onChange={(e) => setSkinColors({...skinColors, secondary: e.target.value})}
+                            className="w-full h-12 rounded border border-border/50"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Акцентный цвет</label>
+                          <input
+                            type="color"
+                            value={skinColors.accent}
+                            onChange={(e) => setSkinColors({...skinColors, accent: e.target.value})}
+                            className="w-full h-12 rounded border border-border/50"
+                          />
+                        </div>
+                      </div>
+                      <div className="bg-muted/50 p-6 rounded-lg">
+                        <h4 className="font-semibold mb-3">Предпросмотр скина</h4>
+                        <div className="relative w-full h-32 rounded-lg overflow-hidden" style={{
+                          background: `linear-gradient(45deg, ${skinColors.primary}, ${skinColors.secondary}, ${skinColors.accent})`
+                        }}>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="text-white font-bold text-lg drop-shadow-lg">
+                              Мой скин
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <Button className="w-full bg-primary hover:bg-primary/90">
+                        <Icon name="Save" size={16} className="mr-2" />
+                        Сохранить скин (5 орбов)
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {skins.map((skin) => (
+                  <Card key={skin.id} className="group hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 bg-card/50 backdrop-blur border-border/50">
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-bold text-lg">{skin.name}</h4>
+                            <p className="text-sm text-muted-foreground">{skin.game}</p>
+                          </div>
+                          <Badge className={getRarityColor(skin.rarity)}>
+                            {skin.rarity}
+                          </Badge>
+                        </div>
+                        
+                        <div className="bg-gradient-to-r from-primary/20 to-secondary/20 h-24 rounded-lg flex items-center justify-center">
+                          <Icon name={skin.type === 'weapon' ? 'Zap' : skin.type === 'character' ? 'User' : 'Shield'} 
+                                size={32} className="text-primary" />
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Icon name="Coins" size={16} className="text-yellow-500" />
+                            <span className="font-bold text-yellow-500">{skin.price}</span>
+                            <span className="text-sm text-muted-foreground">
+                              (≈{skin.price * 10}₽)
+                            </span>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            onClick={() => buySkin(skin)}
+                            disabled={userOrbs < skin.price}
+                            className="bg-primary hover:bg-primary/90 disabled:opacity-50"
+                          >
+                            <Icon name="ShoppingCart" size={14} className="mr-1" />
+                            Купить
                           </Button>
                         </div>
                       </div>
