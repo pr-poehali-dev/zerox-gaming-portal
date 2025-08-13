@@ -24,6 +24,13 @@ const Index = () => {
     secondary: '#F97316',
     accent: '#10B981'
   });
+  const [userInventory, setUserInventory] = useState([]);
+  const [marketplace, setMarketplace] = useState([
+    { id: 1, name: 'Огненный Самурай', price: 18, seller: 'ProGamer123', rarity: 'epic', game: 'Valorant' },
+    { id: 2, name: 'Ледяной Волк', price: 35, seller: 'SkinsHunter', rarity: 'legendary', game: 'CS:GO' },
+    { id: 3, name: 'Космический Воин', price: 12, seller: 'MegaPlayer', rarity: 'rare', game: 'Minecraft' },
+  ]);
+  const [topUpAmount, setTopUpAmount] = useState(10);
 
   const games = [
     { id: 1, title: 'Cyberpunk 2077', category: 'RPG', rating: 4.2, players: '12.5K', image: '/img/aa177eec-efd9-49fe-8751-c18dcec5c174.jpg' },
@@ -64,6 +71,7 @@ const Index = () => {
   const buySkin = (skin: any) => {
     if (userOrbs >= skin.price) {
       setUserOrbs(userOrbs - skin.price);
+      setUserInventory([...userInventory, {...skin, purchaseDate: new Date().toISOString()}]);
       setMessages([...messages, {
         id: messages.length + 1,
         user: 'Система',
@@ -71,6 +79,41 @@ const Index = () => {
         time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
       }]);
     }
+  };
+
+  const buyFromMarketplace = (item: any) => {
+    if (userOrbs >= item.price) {
+      setUserOrbs(userOrbs - item.price);
+      setUserInventory([...userInventory, {...item, purchaseDate: new Date().toISOString()}]);
+      setMarketplace(marketplace.filter(m => m.id !== item.id));
+      setMessages([...messages, {
+        id: messages.length + 1,
+        user: 'Система',
+        text: `🛒 Вы купили "${item.name}" у ${item.seller} за ${item.price} орбов!`,
+        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+      }]);
+    }
+  };
+
+  const sellSkin = (skin: any, price: number) => {
+    setUserInventory(userInventory.filter(item => item.id !== skin.id));
+    setMarketplace([...marketplace, {...skin, price, seller: 'Вы', id: Date.now()}]);
+    setMessages([...messages, {
+      id: messages.length + 1,
+      user: 'Система',
+      text: `💰 Вы выставили "${skin.name}" на продажу за ${price} орбов!`,
+      time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+    }]);
+  };
+
+  const topUpOrbs = (amount: number) => {
+    setUserOrbs(userOrbs + amount);
+    setMessages([...messages, {
+      id: messages.length + 1,
+      user: 'Система',
+      text: `💳 Баланс пополнен на ${amount} орбов (${amount * 10}₽)!`,
+      time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+    }]);
   };
 
   const getRarityColor = (rarity: string) => {
@@ -110,6 +153,55 @@ const Index = () => {
                   (≈{userOrbs * 10} ₽)
                 </div>
               </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="border-green-500/30 text-green-400 hover:bg-green-500/10">
+                    <Icon name="Plus" size={16} className="mr-2" />
+                    Пополнить
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md bg-card border-border">
+                  <DialogHeader>
+                    <DialogTitle>Пополнение орбов</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-3 gap-3">
+                        {[10, 25, 50, 100, 250, 500].map((amount) => (
+                          <Button
+                            key={amount}
+                            variant={topUpAmount === amount ? "default" : "outline"}
+                            className="flex flex-col py-6"
+                            onClick={() => setTopUpAmount(amount)}
+                          >
+                            <span className="font-bold">{amount}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {amount * 10}₽
+                            </span>
+                          </Button>
+                        ))}
+                      </div>
+                      <div className="bg-muted/50 p-4 rounded-lg">
+                        <div className="flex items-center justify-between text-sm">
+                          <span>Текущий баланс:</span>
+                          <span className="font-semibold">{userOrbs} орбов</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span>После пополнения:</span>
+                          <span className="font-semibold text-green-400">{userOrbs + topUpAmount} орбов</span>
+                        </div>
+                      </div>
+                    </div>
+                    <Button 
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      onClick={() => topUpOrbs(topUpAmount)}
+                    >
+                      <Icon name="CreditCard" size={16} className="mr-2" />
+                      Пополнить на {topUpAmount * 10}₽
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <Input 
                 placeholder="Поиск игр..." 
                 className="w-64 bg-background/50 border-border/50"
@@ -126,182 +218,327 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-8">
-            {/* Hero Section */}
-            <div className="relative bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl p-8 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 animate-glow"></div>
-              <div className="relative z-10">
-                <h2 className="text-4xl font-bold mb-4 text-foreground">
-                  Добро пожаловать в мир игр
-                </h2>
-                <p className="text-muted-foreground text-lg mb-6">
-                  Играйте, стримьте и общайтесь с геймерами со всего мира
-                </p>
-                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                  <Icon name="Play" size={20} className="mr-2" />
-                  Начать играть
-                </Button>
-              </div>
-            </div>
-
-            {/* Games Section */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-bold">Популярные игры</h3>
-                <Button variant="outline">
-                  Все игры
-                  <Icon name="ArrowRight" size={16} className="ml-2" />
-                </Button>
-              </div>
+            {/* Navigation Tabs */}
+            <Tabs defaultValue="games" className="w-full">
+              <TabsList className="grid w-full grid-cols-4 bg-card/50">
+                <TabsTrigger value="games">Игры</TabsTrigger>
+                <TabsTrigger value="skins">Магазин скинов</TabsTrigger>
+                <TabsTrigger value="marketplace">Торговая площадка</TabsTrigger>
+                <TabsTrigger value="inventory">Инвентарь</TabsTrigger>
+              </TabsList>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {games.map((game) => (
-                  <Card key={game.id} className="group hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 bg-card/50 backdrop-blur border-border/50 hover:scale-105">
-                    <CardContent className="p-0">
-                      <div className="relative">
-                        <img 
-                          src={game.image} 
-                          alt={game.title}
-                          className="w-full h-48 object-cover rounded-t-lg"
-                        />
-                        <div className="absolute top-4 right-4">
-                          <Badge variant="secondary" className="bg-secondary/90 text-secondary-foreground">
-                            {game.category}
-                          </Badge>
-                        </div>
-                        <div className="absolute bottom-4 left-4 flex items-center space-x-2">
-                          <Icon name="Users" size={16} className="text-primary" />
-                          <span className="text-sm text-primary font-medium">{game.players}</span>
-                        </div>
-                      </div>
-                      <div className="p-6">
-                        <h4 className="font-bold text-lg mb-2">{game.title}</h4>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-1">
-                            <Icon name="Star" size={16} className="text-yellow-500 fill-yellow-500" />
-                            <span className="text-sm font-medium">{game.rating}</span>
-                          </div>
-                          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                            <Icon name="Play" size={16} className="mr-2" />
-                            Играть
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-
-            {/* Skins Store Section */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-bold">Магазин скинов</h3>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="bg-primary hover:bg-primary/90">
-                      <Icon name="Palette" size={16} className="mr-2" />
-                      Создать скин
+              <TabsContent value="games" className="space-y-8">
+                {/* Hero Section */}
+                <div className="relative bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl p-8 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 animate-glow"></div>
+                  <div className="relative z-10">
+                    <h2 className="text-4xl font-bold mb-4 text-foreground">
+                      Добро пожаловать в мир игр
+                    </h2>
+                    <p className="text-muted-foreground text-lg mb-6">
+                      Играйте, стримьте и общайтесь с геймерами со всего мира
+                    </p>
+                    <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                      <Icon name="Play" size={20} className="mr-2" />
+                      Начать играть
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md bg-card border-border">
-                    <DialogHeader>
-                      <DialogTitle>Создание скина</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-6">
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Основной цвет</label>
-                          <input
-                            type="color"
-                            value={skinColors.primary}
-                            onChange={(e) => setSkinColors({...skinColors, primary: e.target.value})}
-                            className="w-full h-12 rounded border border-border/50"
-                          />
+                  </div>
+                </div>
+
+                {/* Games Section */}
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-2xl font-bold">Популярные игры</h3>
+                    <Button variant="outline">
+                      Все игры
+                      <Icon name="ArrowRight" size={16} className="ml-2" />
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {games.map((game) => (
+                      <Card key={game.id} className="group hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 bg-card/50 backdrop-blur border-border/50 hover:scale-105">
+                        <CardContent className="p-0">
+                          <div className="relative">
+                            <img 
+                              src={game.image} 
+                              alt={game.title}
+                              className="w-full h-48 object-cover rounded-t-lg"
+                            />
+                            <div className="absolute top-4 right-4">
+                              <Badge variant="secondary" className="bg-secondary/90 text-secondary-foreground">
+                                {game.category}
+                              </Badge>
+                            </div>
+                            <div className="absolute bottom-4 left-4 flex items-center space-x-2">
+                              <Icon name="Users" size={16} className="text-primary" />
+                              <span className="text-sm text-primary font-medium">{game.players}</span>
+                            </div>
+                          </div>
+                          <div className="p-6">
+                            <h4 className="font-bold text-lg mb-2">{game.title}</h4>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-1">
+                                <Icon name="Star" size={16} className="text-yellow-500 fill-yellow-500" />
+                                <span className="text-sm font-medium">{game.rating}</span>
+                              </div>
+                              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                                <Icon name="Play" size={16} className="mr-2" />
+                                Играть
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="skins" className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold">Магазин скинов</h3>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="bg-primary hover:bg-primary/90">
+                        <Icon name="Palette" size={16} className="mr-2" />
+                        Создать скин
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md bg-card border-border">
+                      <DialogHeader>
+                        <DialogTitle>Создание скина</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-6">
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Основной цвет</label>
+                            <input
+                              type="color"
+                              value={skinColors.primary}
+                              onChange={(e) => setSkinColors({...skinColors, primary: e.target.value})}
+                              className="w-full h-12 rounded border border-border/50"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Дополнительный цвет</label>
+                            <input
+                              type="color"
+                              value={skinColors.secondary}
+                              onChange={(e) => setSkinColors({...skinColors, secondary: e.target.value})}
+                              className="w-full h-12 rounded border border-border/50"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Акцентный цвет</label>
+                            <input
+                              type="color"
+                              value={skinColors.accent}
+                              onChange={(e) => setSkinColors({...skinColors, accent: e.target.value})}
+                              className="w-full h-12 rounded border border-border/50"
+                            />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Дополнительный цвет</label>
-                          <input
-                            type="color"
-                            value={skinColors.secondary}
-                            onChange={(e) => setSkinColors({...skinColors, secondary: e.target.value})}
-                            className="w-full h-12 rounded border border-border/50"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Акцентный цвет</label>
-                          <input
-                            type="color"
-                            value={skinColors.accent}
-                            onChange={(e) => setSkinColors({...skinColors, accent: e.target.value})}
-                            className="w-full h-12 rounded border border-border/50"
-                          />
-                        </div>
-                      </div>
-                      <div className="bg-muted/50 p-6 rounded-lg">
-                        <h4 className="font-semibold mb-3">Предпросмотр скина</h4>
-                        <div className="relative w-full h-32 rounded-lg overflow-hidden" style={{
-                          background: `linear-gradient(45deg, ${skinColors.primary}, ${skinColors.secondary}, ${skinColors.accent})`
-                        }}>
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="text-white font-bold text-lg drop-shadow-lg">
-                              Мой скин
+                        <div className="bg-muted/50 p-6 rounded-lg">
+                          <h4 className="font-semibold mb-3">Предпросмотр скина</h4>
+                          <div className="relative w-full h-32 rounded-lg overflow-hidden" style={{
+                            background: `linear-gradient(45deg, ${skinColors.primary}, ${skinColors.secondary}, ${skinColors.accent})`
+                          }}>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="text-white font-bold text-lg drop-shadow-lg">
+                                Мой скин
+                              </div>
                             </div>
                           </div>
                         </div>
+                        <Button className="w-full bg-primary hover:bg-primary/90">
+                          <Icon name="Save" size={16} className="mr-2" />
+                          Сохранить скин (5 орбов)
+                        </Button>
                       </div>
-                      <Button className="w-full bg-primary hover:bg-primary/90">
-                        <Icon name="Save" size={16} className="mr-2" />
-                        Сохранить скин (5 орбов)
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {skins.map((skin) => (
+                    <Card key={skin.id} className="group hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 bg-card/50 backdrop-blur border-border/50">
+                      <CardContent className="p-6">
+                        <div className="space-y-4">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h4 className="font-bold text-lg">{skin.name}</h4>
+                              <p className="text-sm text-muted-foreground">{skin.game}</p>
+                            </div>
+                            <Badge className={getRarityColor(skin.rarity)}>
+                              {skin.rarity}
+                            </Badge>
+                          </div>
+                          
+                          <div className="bg-gradient-to-r from-primary/20 to-secondary/20 h-24 rounded-lg flex items-center justify-center">
+                            <Icon name={skin.type === 'weapon' ? 'Zap' : skin.type === 'character' ? 'User' : 'Shield'} 
+                                  size={32} className="text-primary" />
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Icon name="Coins" size={16} className="text-yellow-500" />
+                              <span className="font-bold text-yellow-500">{skin.price}</span>
+                              <span className="text-sm text-muted-foreground">
+                                (≈{skin.price * 10}₽)
+                              </span>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              onClick={() => buySkin(skin)}
+                              disabled={userOrbs < skin.price}
+                              className="bg-primary hover:bg-primary/90 disabled:opacity-50"
+                            >
+                              <Icon name="ShoppingCart" size={14} className="mr-1" />
+                              Купить
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="marketplace" className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold">Торговая площадка</h3>
+                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                    {marketplace.length} лотов
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {marketplace.map((item) => (
+                    <Card key={item.id} className="group hover:shadow-xl transition-all duration-300 bg-card/50 backdrop-blur border-border/50">
+                      <CardContent className="p-6">
+                        <div className="space-y-4">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h4 className="font-bold text-lg">{item.name}</h4>
+                              <p className="text-sm text-muted-foreground">от {item.seller}</p>
+                            </div>
+                            <Badge className={getRarityColor(item.rarity)}>
+                              {item.rarity}
+                            </Badge>
+                          </div>
+                          
+                          <div className="bg-gradient-to-r from-orange-500/20 to-blue-500/20 h-24 rounded-lg flex items-center justify-center">
+                            <Icon name="Package" size={32} className="text-orange-400" />
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Icon name="Coins" size={16} className="text-yellow-500" />
+                              <span className="font-bold text-yellow-500">{item.price}</span>
+                              <span className="text-sm text-muted-foreground">
+                                (≈{item.price * 10}₽)
+                              </span>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              onClick={() => buyFromMarketplace(item)}
+                              disabled={userOrbs < item.price}
+                              className="bg-orange-600 hover:bg-orange-700 disabled:opacity-50"
+                            >
+                              <Icon name="ShoppingBag" size={14} className="mr-1" />
+                              Купить
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="inventory" className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold">Мой инвентарь</h3>
+                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                    {userInventory.length} предметов
+                  </Badge>
+                </div>
+                
+                {userInventory.length === 0 ? (
+                  <Card className="bg-card/50 backdrop-blur border-border/50">
+                    <CardContent className="p-12 text-center">
+                      <Icon name="Package" size={48} className="mx-auto text-muted-foreground mb-4" />
+                      <h4 className="text-xl font-semibold mb-2">Инвентарь пуст</h4>
+                      <p className="text-muted-foreground mb-6">Купите скины в магазине или на торговой площадке</p>
+                      <Button className="bg-primary hover:bg-primary/90">
+                        Перейти в магазин
                       </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {skins.map((skin) => (
-                  <Card key={skin.id} className="group hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 bg-card/50 backdrop-blur border-border/50">
-                    <CardContent className="p-6">
-                      <div className="space-y-4">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h4 className="font-bold text-lg">{skin.name}</h4>
-                            <p className="text-sm text-muted-foreground">{skin.game}</p>
-                          </div>
-                          <Badge className={getRarityColor(skin.rarity)}>
-                            {skin.rarity}
-                          </Badge>
-                        </div>
-                        
-                        <div className="bg-gradient-to-r from-primary/20 to-secondary/20 h-24 rounded-lg flex items-center justify-center">
-                          <Icon name={skin.type === 'weapon' ? 'Zap' : skin.type === 'character' ? 'User' : 'Shield'} 
-                                size={32} className="text-primary" />
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <Icon name="Coins" size={16} className="text-yellow-500" />
-                            <span className="font-bold text-yellow-500">{skin.price}</span>
-                            <span className="text-sm text-muted-foreground">
-                              (≈{skin.price * 10}₽)
-                            </span>
-                          </div>
-                          <Button 
-                            size="sm" 
-                            onClick={() => buySkin(skin)}
-                            disabled={userOrbs < skin.price}
-                            className="bg-primary hover:bg-primary/90 disabled:opacity-50"
-                          >
-                            <Icon name="ShoppingCart" size={14} className="mr-1" />
-                            Купить
-                          </Button>
-                        </div>
-                      </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-            </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {userInventory.map((item, index) => (
+                      <Card key={index} className="group hover:shadow-xl transition-all duration-300 bg-card/50 backdrop-blur border-border/50">
+                        <CardContent className="p-6">
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h4 className="font-bold text-lg">{item.name}</h4>
+                                <p className="text-sm text-muted-foreground">{item.game}</p>
+                              </div>
+                              <Badge className={getRarityColor(item.rarity)}>
+                                {item.rarity}
+                              </Badge>
+                            </div>
+                            
+                            <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 h-24 rounded-lg flex items-center justify-center">
+                              <Icon name="Crown" size={32} className="text-green-400" />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="text-xs text-muted-foreground">
+                                Куплено: {new Date(item.purchaseDate).toLocaleDateString('ru-RU')}
+                              </div>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button size="sm" variant="outline" className="border-red-500/30 text-red-400 hover:bg-red-500/10">
+                                    <Icon name="Tag" size={14} className="mr-1" />
+                                    Продать
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md bg-card border-border">
+                                  <DialogHeader>
+                                    <DialogTitle>Продажа скина</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div className="space-y-2">
+                                      <label className="text-sm font-medium">Цена (орбы)</label>
+                                      <Input
+                                        type="number"
+                                        placeholder="Введите цену..."
+                                        className="bg-background/50 border-border/50"
+                                      />
+                                    </div>
+                                    <Button 
+                                      className="w-full bg-red-600 hover:bg-red-700"
+                                      onClick={() => sellSkin(item, 15)}
+                                    >
+                                      <Icon name="DollarSign" size={16} className="mr-2" />
+                                      Выставить на продажу
+                                    </Button>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
 
             {/* Streams Section */}
             <div className="space-y-6">
