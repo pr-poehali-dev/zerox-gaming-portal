@@ -31,6 +31,8 @@ const Index = () => {
     { id: 3, name: 'Космический Воин', price: 12, seller: 'MegaPlayer', rarity: 'rare', game: 'Minecraft' },
   ]);
   const [topUpAmount, setTopUpAmount] = useState(10);
+  const [sellPrice, setSellPrice] = useState(0);
+  const [selectedItemToSell, setSelectedItemToSell] = useState(null);
 
   const games = [
     { id: 1, title: 'Cyberpunk 2077', category: 'RPG', rating: 4.2, players: '12.5K', image: '/img/aa177eec-efd9-49fe-8751-c18dcec5c174.jpg' },
@@ -351,7 +353,32 @@ const Index = () => {
                             </div>
                           </div>
                         </div>
-                        <Button className="w-full bg-primary hover:bg-primary/90">
+                        <Button 
+                          className="w-full bg-primary hover:bg-primary/90"
+                          onClick={() => {
+                            if (userOrbs >= 5) {
+                              setUserOrbs(userOrbs - 5);
+                              const newSkin = {
+                                id: Date.now(),
+                                name: 'Мой кастомный скин',
+                                price: 0,
+                                rarity: 'common',
+                                game: 'Custom',
+                                type: 'custom',
+                                colors: skinColors,
+                                purchaseDate: new Date().toISOString()
+                              };
+                              setUserInventory([...userInventory, newSkin]);
+                              setMessages([...messages, {
+                                id: messages.length + 1,
+                                user: 'Система',
+                                text: '🎨 Кастомный скин создан и добавлен в инвентарь!',
+                                time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+                              }]);
+                            }
+                          }}
+                          disabled={userOrbs < 5}
+                        >
                           <Icon name="Save" size={16} className="mr-2" />
                           Сохранить скин (5 орбов)
                         </Button>
@@ -522,7 +549,12 @@ const Index = () => {
                                     </div>
                                     <Button 
                                       className="w-full bg-red-600 hover:bg-red-700"
-                                      onClick={() => sellSkin(item, 15)}
+                                      onClick={() => {
+                                        const price = parseInt(prompt('Введите цену в орбах:') || '15');
+                                        if (price > 0) {
+                                          sellSkin(item, price);
+                                        }
+                                      }}
                                     >
                                       <Icon name="DollarSign" size={16} className="mr-2" />
                                       Выставить на продажу
